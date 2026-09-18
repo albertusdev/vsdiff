@@ -1,0 +1,431 @@
+{
+  "name": "vsdiff",
+  "displayName": "vsdiff",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Agent-first guided code review: agents author the review path, you review it natively.",
+  "categories": [
+    "Other"
+  ],
+  "homepage": "https://github.com/albertusdev/vsdiff#readme",
+  "bugs": {
+    "url": "https://github.com/albertusdev/vsdiff/issues"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/albertusdev/vsdiff.git"
+  },
+  "publisher": "vsdiff",
+  "type": "module",
+  "main": "./dist/extension.cjs",
+  "scripts": {
+    "build": "tsdown --config tsdown.config.ts",
+    "package": "node ../../scripts/package-extension.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/vscode": "~1.104.0",
+    "@vscode/vsce": "catalog:",
+    "@vsdiff/core": "workspace:*",
+    "@vsdiff/schema": "workspace:*",
+    "tsdown": "catalog:",
+    "typescript": "catalog:"
+  },
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "vsdiff",
+          "title": "vsdiff",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "vsdiff": [
+        {
+          "id": "vsdiff.outline",
+          "name": "Review Outline"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "vsdiff.hello",
+        "title": "vsdiff: Hello"
+      },
+      {
+        "command": "vsdiff.debug.state",
+        "title": "vsdiff: Dump Debug State"
+      },
+      {
+        "command": "vsdiff.reload",
+        "title": "vsdiff: Reload Review Session"
+      },
+      {
+        "command": "vsdiff.next",
+        "title": "vsdiff: Next in Review",
+        "icon": "$(chevron-down)",
+        "enablement": "vsdiff.sessionLoaded"
+      },
+      {
+        "command": "vsdiff.prev",
+        "title": "vsdiff: Previous in Review",
+        "icon": "$(chevron-up)",
+        "enablement": "vsdiff.sessionLoaded"
+      },
+      {
+        "command": "vsdiff.nextStop",
+        "title": "vsdiff: Next Stop"
+      },
+      {
+        "command": "vsdiff.prevStop",
+        "title": "vsdiff: Previous Stop"
+      },
+      {
+        "command": "vsdiff.pickStop",
+        "title": "vsdiff: Jump to Stop…"
+      },
+      {
+        "command": "vsdiff.addComment",
+        "title": "Comment for the agent",
+        "icon": "$(comment)",
+        "enablement": "vsdiff.sessionLoaded"
+      },
+      {
+        "command": "vsdiff.resolveThread",
+        "title": "Resolve",
+        "icon": "$(check)",
+        "enablement": "vsdiff.sessionLoaded"
+      },
+      {
+        "command": "vsdiff.verdict.accept",
+        "title": "vsdiff: Accept Current Stop"
+      },
+      {
+        "command": "vsdiff.verdict.needsWork",
+        "title": "vsdiff: Current Stop Needs Work"
+      },
+      {
+        "command": "vsdiff.verdict.question",
+        "title": "vsdiff: Question on Current Stop"
+      },
+      {
+        "command": "vsdiff.finishReview",
+        "title": "vsdiff: Finish Review…",
+        "icon": "$(check-all)"
+      },
+      {
+        "command": "vsdiff.applyCommitMessage",
+        "title": "vsdiff: Apply Proposed Commit Message",
+        "enablement": "vsdiff.sessionLoaded"
+      },
+      {
+        "command": "vsdiff.nextHunk",
+        "title": "vsdiff: Next Hunk in Stop",
+        "enablement": "vsdiff.sessionLoaded"
+      },
+      {
+        "command": "vsdiff.prevHunk",
+        "title": "vsdiff: Previous Hunk in Stop",
+        "enablement": "vsdiff.sessionLoaded"
+      },
+      {
+        "command": "vsdiff.draft.accept",
+        "title": "Accept draft",
+        "icon": "$(check)",
+        "enablement": "vsdiff.proposal"
+      },
+      {
+        "command": "vsdiff.draft.edit",
+        "title": "Edit draft…",
+        "icon": "$(edit)",
+        "enablement": "vsdiff.proposal"
+      },
+      {
+        "command": "vsdiff.draft.drop",
+        "title": "Drop draft",
+        "icon": "$(close)",
+        "enablement": "vsdiff.proposal"
+      },
+      {
+        "command": "vsdiff.draft.saveEdit",
+        "title": "Save",
+        "enablement": "vsdiff.proposal && !commentIsEmpty"
+      },
+      {
+        "command": "vsdiff.draft.cancelEdit",
+        "title": "Cancel",
+        "enablement": "vsdiff.proposal"
+      },
+      {
+        "command": "vsdiff.openReviewBody",
+        "title": "vsdiff: Open Draft Review Body",
+        "icon": "$(note)",
+        "enablement": "vsdiff.sessionLoaded"
+      },
+      {
+        "command": "vsdiff.debug.proposalPayload",
+        "title": "vsdiff: Dump Proposal Payload"
+      },
+      {
+        "command": "vsdiff.openGuide",
+        "title": "vsdiff: Open HTML Guide",
+        "icon": "$(book)",
+        "enablement": "vsdiff.sessionLoaded"
+      },
+      {
+        "command": "vsdiff.debug.guideNav",
+        "title": "vsdiff: Guide Bridge Navigate"
+      },
+      {
+        "command": "vsdiff.openOverview",
+        "title": "vsdiff: Open Review Overview",
+        "icon": "$(map)",
+        "enablement": "vsdiff.sessionLoaded"
+      },
+      {
+        "command": "vsdiff.focusReview",
+        "title": "vsdiff: Focus Review",
+        "icon": "$(screen-full)",
+        "enablement": "vsdiff.sessionLoaded"
+      },
+      {
+        "command": "vsdiff.toggleOverviewPin",
+        "title": "vsdiff: Pin or Unpin Overview",
+        "icon": "$(pin)",
+        "enablement": "vsdiff.sessionLoaded"
+      },
+      {
+        "command": "vsdiff.expandGuide",
+        "title": "Show full guide",
+        "icon": "$(unfold)"
+      },
+      {
+        "command": "vsdiff.collapseGuide",
+        "title": "Show less",
+        "icon": "$(fold)"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "vsdiff.draft.saveEdit",
+          "when": "false"
+        },
+        {
+          "command": "vsdiff.draft.cancelEdit",
+          "when": "false"
+        },
+        {
+          "command": "vsdiff.expandGuide",
+          "when": "false"
+        },
+        {
+          "command": "vsdiff.collapseGuide",
+          "when": "false"
+        }
+      ],
+      "comments/comment/context": [
+        {
+          "command": "vsdiff.draft.saveEdit",
+          "group": "inline@1",
+          "when": "commentController == vsdiff-draft"
+        },
+        {
+          "command": "vsdiff.draft.cancelEdit",
+          "group": "inline@2",
+          "when": "commentController == vsdiff-draft"
+        }
+      ],
+      "comments/comment/title": [
+        {
+          "command": "vsdiff.draft.edit",
+          "group": "overflow@1",
+          "when": "commentController == vsdiff-draft && comment =~ /vsdiff-draft-preview/"
+        },
+        {
+          "command": "vsdiff.expandGuide",
+          "group": "inline@0",
+          "when": "commentController == vsdiff && comment == vsdiff-guide-compact"
+        },
+        {
+          "command": "vsdiff.collapseGuide",
+          "group": "inline@0",
+          "when": "commentController == vsdiff && comment == vsdiff-guide-expanded"
+        }
+      ],
+      "comments/commentThread/context": [
+        {
+          "command": "vsdiff.addComment",
+          "group": "inline",
+          "when": "commentController == vsdiff"
+        }
+      ],
+      "comments/commentThread/title": [
+        {
+          "command": "vsdiff.resolveThread",
+          "group": "navigation",
+          "when": "commentController == vsdiff && commentThread =~ /vsdiff-open/"
+        },
+        {
+          "command": "vsdiff.draft.accept",
+          "group": "navigation@1",
+          "when": "commentController == vsdiff-draft && commentThread =~ /vsdiff-draft/"
+        },
+        {
+          "command": "vsdiff.draft.edit",
+          "group": "navigation@2",
+          "when": "commentController == vsdiff-draft && commentThread =~ /vsdiff-draft/"
+        },
+        {
+          "command": "vsdiff.draft.drop",
+          "group": "navigation@3",
+          "when": "commentController == vsdiff-draft && commentThread =~ /vsdiff-draft/"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "vsdiff.openOverview",
+          "group": "navigation@0",
+          "when": "view == vsdiff.outline && vsdiff.sessionLoaded"
+        },
+        {
+          "command": "vsdiff.openReviewBody",
+          "group": "navigation@0",
+          "when": "view == vsdiff.outline && vsdiff.proposal"
+        },
+        {
+          "command": "vsdiff.finishReview",
+          "group": "navigation@1",
+          "when": "view == vsdiff.outline && vsdiff.sessionLoaded"
+        },
+        {
+          "command": "vsdiff.openGuide",
+          "group": "navigation@2",
+          "when": "view == vsdiff.outline && vsdiff.hasGuide"
+        },
+        {
+          "command": "vsdiff.focusReview",
+          "group": "navigation@3",
+          "when": "view == vsdiff.outline && vsdiff.sessionLoaded"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "vsdiff.openOverview",
+          "group": "navigation@0",
+          "when": "vsdiff.sessionLoaded && isInDiffEditor"
+        },
+        {
+          "command": "vsdiff.prev",
+          "group": "navigation@1",
+          "when": "vsdiff.sessionLoaded && isInDiffEditor"
+        },
+        {
+          "command": "vsdiff.next",
+          "group": "navigation@2",
+          "when": "vsdiff.sessionLoaded && isInDiffEditor"
+        },
+        {
+          "command": "vsdiff.addComment",
+          "group": "navigation@3",
+          "when": "vsdiff.sessionLoaded && isInDiffEditor"
+        },
+        {
+          "command": "vsdiff.focusReview",
+          "group": "navigation@4",
+          "when": "vsdiff.sessionLoaded && isInDiffEditor"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "vsdiff.next",
+        "key": "ctrl+alt+j",
+        "mac": "cmd+alt+j",
+        "when": "vsdiff.sessionLoaded"
+      },
+      {
+        "command": "vsdiff.prev",
+        "key": "ctrl+alt+k",
+        "mac": "cmd+alt+k",
+        "when": "vsdiff.sessionLoaded"
+      },
+      {
+        "command": "vsdiff.nextHunk",
+        "key": "ctrl+alt+l",
+        "mac": "cmd+alt+l",
+        "when": "vsdiff.sessionLoaded"
+      },
+      {
+        "command": "vsdiff.prevHunk",
+        "key": "ctrl+alt+h",
+        "mac": "cmd+alt+h",
+        "when": "vsdiff.sessionLoaded"
+      }
+    ],
+    "viewsWelcome": [
+      {
+        "view": "vsdiff.outline",
+        "contents": "No review session loaded.\n\nAsk your agent to author one — it can run `vsdiff guide` for the format — or re-scan the workspace.\n[Re-scan for sessions](command:vsdiff.reload)\n\nSessions live in `.vsdiff/sessions/<name>/session.json`."
+      }
+    ],
+    "resourceLabelFormatters": [
+      {
+        "scheme": "vsdiff-git",
+        "formatting": {
+          "label": "${path}",
+          "separator": "/",
+          "workspaceSuffix": "vsdiff"
+        }
+      }
+    ],
+    "configuration": {
+      "title": "vsdiff",
+      "properties": {
+        "vsdiff.overview.layout": {
+          "type": "string",
+          "enum": [
+            "beside",
+            "tab"
+          ],
+          "default": "tab",
+          "enumDescriptions": [
+            "The Overview lives in its own locked editor group next to the diffs — always visible while you walk hunks.",
+            "The Overview opens as a normal tab in the main group."
+          ],
+          "description": "Where the Review Overview opens."
+        },
+        "vsdiff.review.autoDone": {
+          "type": "string",
+          "enum": [
+            "on-read",
+            "on-visit",
+            "off"
+          ],
+          "default": "on-read",
+          "enumDescriptions": [
+            "A stop checks itself off once every line of its hunks has actually been on screen (a fling past a hunk does not count).",
+            "A stop checks itself off as soon as navigation has landed on each of its hunks.",
+            "Checkmarks are fully manual."
+          ],
+          "description": "Sync review checkmarks from what you have looked at. Per-file marks land as each file inside a stop completes; a mark you set by hand is never rewritten."
+        }
+      }
+    }
+  },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "engines": {
+    "vscode": "^1.104.0"
+  },
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true,
+      "description": "Reviewing diffs and sessions works untrusted; rendering agent-authored HTML guides requires a trusted workspace and is gated at runtime."
+    }
+  }
+}

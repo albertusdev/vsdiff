@@ -1,0 +1,18 @@
+{
+  "name": "@vsdiff/e2e",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Playwright harness: drives serve-web, screenshots the UI, asserts via the dev bridge.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "true",
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "catalog:",
+    "@types/node": "catalog:",
+    "@vsdiff/core": "workspace:*",
+    "typescript": "catalog:"
+  }
+}

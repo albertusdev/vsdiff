@@ -1,0 +1,27 @@
+{
+  "name": "@vsdiff/cli",
+  "version": "0.2.0",
+  "private": true,
+  "description": "The vsdiff CLI: authoring guide, validation, editor control, feedback loop.",
+  "license": "MIT",
+  "bin": {
+    "vsdiff": "./dist/main.mjs"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "tsdown src/main.ts --format esm --out-dir dist"
+  },
+  "dependencies": {
+    "@vsdiff/core": "workspace:*",
+    "@vsdiff/github": "workspace:*",
+    "@vsdiff/schema": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsdown": "catalog:",
+    "typescript": "catalog:"
+  }
+}

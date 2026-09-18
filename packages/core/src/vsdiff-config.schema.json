@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/albertusdev/vsdiff/main/packages/core/src/vsdiff-config.schema.json",
+  "title": "vsdiff config",
+  "description": "vsdiff's config file, read from ~/.config/vsdiff/config.jsonc (or $XDG_CONFIG_HOME) and overlaid by <repo>/.vsdiff/config.jsonc. The format is JSONC: comments and trailing commas are allowed. Unknown keys are preserved rather than rejected (additionalProperties is deliberately true at every level) so one file can serve several vsdiff versions; editors that honour this schema will still flag a key vsdiff does not know.",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "URL of this schema, for editor completion and validation."
+    },
+    "editor": {
+      "enum": ["auto", "vscode", "cursor", "windsurf", "custom", "web"],
+      "default": "auto",
+      "description": "Which editor vsdiff opens. Each preset resolves to a CLI binary and a deep-link URI scheme: vscode → code / vscode://, cursor → cursor / cursor://, windsurf → windsurf / windsurf://. \"auto\" picks the first of code, cursor, windsurf found on PATH and records the choice here on first run; \"custom\" runs editorCommand instead. The VSDIFF_EDITOR environment variable overrides this for a single invocation. \"web\" opens the review as a browser tab on a local `code serve-web` daemon that vsdiff starts and reuses (see the \"web\" settings block)."
+    },
+    "editorCommand": {
+      "type": "string",
+      "description": "Command template used when editor is \"custom\". The first token is the binary and the rest are its arguments; {dir}, {file} and {line} are substituted per argument, double quotes group an argument containing spaces, and an argument whose placeholders all come up empty is dropped. No shell is involved, so pipes and redirection do not work. Example: \"subl --new-window {dir} {file}:{line}\"."
+    },
+    "web": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Settings for the \"web\" editor target: a shared local `code serve-web` daemon with the vsdiff extension installed, isolated under its own data dir.",
+      "properties": {
+        "port": {
+          "type": "integer",
+          "default": 3123,
+          "description": "Port the serve-web daemon listens on (loopback only)."
+        },
+        "dataDir": {
+          "type": "string",
+          "description": "Server data dir (default ~/.cache/vsdiff/serve-web, honoring $XDG_CACHE_HOME). Must live outside any reviewed repository: an untrusted workspace refuses to load extensions stored inside itself."
+        }
+      }
+    },
+    "github": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Settings for publishing a review to a GitHub pull request.",
+      "properties": {
+        "attribution": {
+          "enum": ["footer", "none"],
+          "default": "footer",
+          "description": "Whether posted comments carry a footer marking them as authored through vsdiff."
+        }
+      }
+    },
+    "session": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Settings for the session files under .vsdiff/.",
+      "properties": {
+        "gitignore": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether vsdiff keeps .vsdiff/sessions out of git by managing a .gitignore entry for it."
+        }
+      }
+    }
+  }
+}

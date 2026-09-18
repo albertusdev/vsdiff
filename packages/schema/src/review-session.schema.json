@@ -1,0 +1,367 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vsdiff.dev/schema/review-session.v1.json",
+  "title": "vsdiff Review Session v1",
+  "description": "An agent-authored guided review over a live git diff. Diff content is never embedded: hunk ids resolve against whatever diff `source` names, computed fresh on load. Unknown fields are preserved everywhere (additionalProperties is deliberately true at every level); `x-` prefixed keys are reserved for agent experiments. Three rules cannot be expressed in JSON Schema and are enforced by `vsdiff validate` instead: chapter/stop/support ids must be unique (stop ids across the whole session), a hunk id may appear at most once in the entire document, and an anchor's `end` must not precede its `start`.",
+  "type": "object",
+  "required": ["version", "kind", "title", "source", "chapters"],
+  "additionalProperties": true,
+  "properties": {
+    "version": {
+      "const": 1,
+      "description": "Review Session format version."
+    },
+    "kind": {
+      "const": "review"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Short human title for the change under review.",
+      "maxLength": 80
+    },
+    "focus": {
+      "type": "string",
+      "description": "One or two sentences naming what the reviewer should watch.",
+      "maxLength": 240
+    },
+    "source": {
+      "$ref": "#/$defs/sessionSource"
+    },
+    "guide": {
+      "$ref": "#/$defs/guideRef"
+    },
+    "intent": {
+      "enum": ["walkthrough", "proposal"],
+      "default": "walkthrough",
+      "description": "\"proposal\" marks the stops as draft review comments awaiting triage."
+    },
+    "commit": {
+      "$ref": "#/$defs/commitProposal"
+    },
+    "pr": {
+      "$ref": "#/$defs/pullRequestRef"
+    },
+    "chapters": {
+      "type": "array",
+      "description": "Conceptual groups in display order, ordered by review leverage rather than file order. May be empty.",
+      "items": {
+        "$ref": "#/$defs/chapter"
+      }
+    },
+    "support": {
+      "type": "array",
+      "description": "Changed hunks deliberately kept off the main path. Hunks referenced by nothing are auto-collected into a synthetic \"uncovered\" group on load.",
+      "items": {
+        "$ref": "#/$defs/supportGroup"
+      }
+    }
+  },
+  "$defs": {
+    "hunkId": {
+      "type": "string",
+      "pattern": "^.+:h[1-9][0-9]*$",
+      "description": "`<path>:h<n>` \u2014 the n-th hunk of that file's patch in the diff `source` names, counted from 1. The LAST `:h<digits>` suffix is the separator, so `a:h2b.ts:h1` is hunk 1 of the file `a:h2b.ts`.",
+      "examples": ["src/auth/middleware.ts:h2", "pnpm-lock.yaml:h1"]
+    },
+    "sessionSource": {
+      "type": "object",
+      "description": "Which diff every hunk id in this session resolves against.",
+      "required": ["type"],
+      "additionalProperties": true,
+      "properties": {
+        "type": {
+          "enum": ["working-tree", "staged", "commit", "range"]
+        },
+        "base": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Old-side ref or SHA, e.g. \"main\". Required for a \"range\" source."
+        },
+        "head": {
+          "type": "string",
+          "minLength": 1,
+          "description": "New-side ref or SHA, e.g. \"HEAD\". Required for \"commit\" and \"range\" sources."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "range"
+              }
+            },
+            "required": ["type"]
+          },
+          "then": {
+            "required": ["base", "head"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "commit"
+              }
+            },
+            "required": ["type"]
+          },
+          "then": {
+            "required": ["head"]
+          }
+        }
+      ]
+    },
+    "guideRef": {
+      "type": "object",
+      "description": "Optional agent-authored HTML guide rendered in a webview panel.",
+      "required": ["html"],
+      "additionalProperties": true,
+      "properties": {
+        "html": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Path relative to the session directory, e.g. \"guide/index.html\".",
+          "pattern": "^(?![a-zA-Z][a-zA-Z0-9+.-]*://)(?![\\\\/])(?![a-zA-Z]:[\\\\/])(?!.*(^|[\\\\/])\\.\\.([\\\\/]|$)).+$"
+        }
+      }
+    },
+    "commitProposal": {
+      "type": "object",
+      "description": "Commit message proposed for a working-tree session; surfaced as an \"Apply commit message\" action.",
+      "required": ["title"],
+      "additionalProperties": true,
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 72
+        },
+        "body": {
+          "type": "string"
+        }
+      }
+    },
+    "pullRequestRef": {
+      "type": "object",
+      "description": "Pins a GitHub-sourced session to the head it was authored against.",
+      "required": ["number"],
+      "additionalProperties": true,
+      "properties": {
+        "number": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "headSha": {
+          "type": "string"
+        }
+      }
+    },
+    "chapter": {
+      "type": "object",
+      "required": ["id", "title", "stops"],
+      "additionalProperties": true,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique across the session's chapters."
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Names the idea the chapter groups \u2014 never a file path.",
+          "maxLength": 24
+        },
+        "blurb": {
+          "type": "string",
+          "description": "One sentence of orientation.",
+          "maxLength": 140
+        },
+        "priority": {
+          "enum": ["must", "nice"],
+          "default": "must",
+          "description": "How a skimmer should treat this chapter's stops. Unset means \"must\". \"nice\" is internal-facing, easily reversible, low blast radius — an FYI, not a gate — and the blurb must say why in one line."
+        },
+        "stops": {
+          "type": "array",
+          "description": "The review path for this chapter, one review idea per stop.",
+          "items": {
+            "$ref": "#/$defs/stop"
+          }
+        }
+      }
+    },
+    "stop": {
+      "type": "object",
+      "description": "One review idea. Must point at changed code (hunkIds), a line range (anchors), or both.",
+      "required": ["id", "prose"],
+      "additionalProperties": true,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique across the WHOLE session; feedback events and deep links address stops by id."
+        },
+        "kind": {
+          "enum": ["walkthrough", "finding", "question", "verify"],
+          "default": "walkthrough"
+        },
+        "severity": {
+          "enum": ["info", "minor", "major", "blocker"],
+          "description": "Ranks findings only \u2014 valid solely when kind is \"finding\"."
+        },
+        "priority": {
+          "enum": ["must", "nice"],
+          "default": "must",
+          "description": "Overrides the chapter's priority for this stop; unset inherits it, and an unset chapter is \"must\". \"nice\" is internal-facing, easily reversible, low blast radius \u2014 an FYI, not a gate \u2014 and the prose must say why in one line."
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 72,
+          "description": "Semantic 2-6 word title \u2014 never a file path."
+        },
+        "prose": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Inline markdown; no headings, lists, or other block structure.",
+          "maxLength": 2000
+        },
+        "hunkIds": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/hunkId"
+          }
+        },
+        "anchors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/anchor"
+          }
+        },
+        "suggestion": {
+          "$ref": "#/$defs/suggestion"
+        },
+        "checks": {
+          "type": "array",
+          "description": "Things the reviewer should confirm.",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "allOf": [
+        {
+          "$comment": "severity is meaningful only on a finding",
+          "if": {
+            "required": ["severity"]
+          },
+          "then": {
+            "required": ["kind"],
+            "properties": {
+              "kind": {
+                "const": "finding"
+              }
+            }
+          }
+        },
+        {
+          "$comment": "a stop must land the reviewer somewhere",
+          "anyOf": [
+            {
+              "required": ["hunkIds"],
+              "properties": {
+                "hunkIds": {
+                  "minItems": 1
+                }
+              }
+            },
+            {
+              "required": ["anchors"],
+              "properties": {
+                "anchors": {
+                  "minItems": 1
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "anchor": {
+      "type": "object",
+      "description": "A line range in a file \u2014 the only way to point at UNCHANGED code.",
+      "required": ["path", "side", "start", "end"],
+      "additionalProperties": true,
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Repo-relative path."
+        },
+        "side": {
+          "enum": ["base", "head"],
+          "description": "Which side of the diff the line numbers belong to."
+        },
+        "start": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "1-based, inclusive."
+        },
+        "end": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "1-based, inclusive, never before start."
+        },
+        "context": {
+          "type": "string",
+          "description": "Snippet from the anchored lines; relocates the anchor when the file drifts."
+        }
+      }
+    },
+    "suggestion": {
+      "type": "object",
+      "required": ["patch"],
+      "additionalProperties": true,
+      "properties": {
+        "patch": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unified diff."
+        }
+      }
+    },
+    "supportGroup": {
+      "type": "object",
+      "required": ["id", "reason", "hunkIds"],
+      "additionalProperties": true,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Why it is off the main path, e.g. \"generated\", \"lockfile\", \"mechanical rename\".",
+          "maxLength": 48
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 140
+        },
+        "hunkIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/hunkId"
+          }
+        }
+      }
+    }
+  }
+}

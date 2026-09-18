@@ -1,0 +1,29 @@
+{
+  "name": "@vsdiff/schema",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Review Session format: types, validation, repair.",
+  "license": "MIT",
+  "files": [
+    "dist",
+    "guide.md"
+  ],
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    },
+    "./guide.md": "./guide.md"
+  },
+  "scripts": {
+    "build": "tsdown src/index.ts --format esm --dts --out-dir dist"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsdown": "catalog:",
+    "typescript": "catalog:"
+  }
+}

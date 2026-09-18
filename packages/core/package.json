@@ -1,0 +1,30 @@
+{
+  "name": "@vsdiff/core",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Session engine: git diff, anchors, session store, feedback log. No vscode imports.",
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "scripts": {
+    "build": "tsdown src/index.ts --format esm --dts --out-dir dist"
+  },
+  "dependencies": {
+    "@vsdiff/schema": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsdown": "catalog:",
+    "typescript": "catalog:"
+  }
+}

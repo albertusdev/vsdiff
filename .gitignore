@@ -1,0 +1,14 @@
+.references/
+node_modules/
+dist/
+.dev/
+*.vsix
+*.tsbuildinfo
+.vsdiff/
+coverage/
+packages/e2e/test-results/
+.claude/worktrees/
+.claude/settings.local.json
+
+# Full-resolution demo video ships as a release asset.
+docs/media/*.mp4

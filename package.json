@@ -1,0 +1,27 @@
+{
+  "name": "vsdiff-monorepo",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -r run build && pnpm --filter vsdiff run package",
+    "test": "vp test",
+    "check": "vp check",
+    "fmt": "vp fmt",
+    "web": "node scripts/web.mjs",
+    "e2e": "pnpm --filter @vsdiff/e2e test",
+    "fixture": "node scripts/make-fixture.mjs",
+    "loop": "pnpm build && node scripts/web.mjs restart && pnpm e2e",
+    "demo": "node scripts/demo.mjs",
+    "typecheck": "tsc -p packages/extension/tsconfig.json --noEmit",
+    "media": "VSDIFF_MEDIA=1 pnpm --filter @vsdiff/e2e test tests/media.spec.ts"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vite-plus": "catalog:"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@9.15.9"
+}

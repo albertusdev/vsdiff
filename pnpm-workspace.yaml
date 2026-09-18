@@ -1,0 +1,12 @@
+packages:
+  - packages/*
+
+catalog:
+  vite-plus: ^0.3.3
+  vitest: 4.1.11
+  tsdown: ^0.22.14
+  typescript: ^5.9.3
+  '@types/node': ^22.0.0
+  '@types/vscode': ~1.104.0
+  '@vscode/vsce': ^3.9.2
+  '@playwright/test': ^1.62.1
